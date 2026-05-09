@@ -1,4 +1,4 @@
-# PROJECT_CONTEXT.md — Tri Thức Số (TTS-2026)
+# Tri Thức Số (TTS-2026)
 
 > Digital Library System — Graduation Thesis Project
 > Generated: 2026-04-30
