@@ -1,0 +1,119 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  html {
+    scroll-behavior: smooth;
+  }
+  @media (prefers-reduced-motion: reduce) {
+    html {
+      scroll-behavior: auto;
+    }
+  }
+  body {
+    @apply bg-surface text-ink-900 antialiased min-h-screen;
+  }
+}
+
+@layer utilities {
+  .shadow-soft {
+    box-shadow: 0 4px 24px rgba(37, 99, 235, 0.08);
+  }
+}
+
+@layer components {
+  .admin-datatable.p-datatable {
+    border: none;
+    border-radius: 0;
+  }
+  .admin-datatable .p-datatable-table {
+    border-radius: 0.75rem;
+    overflow: hidden;
+  }
+  .admin-datatable .p-datatable-thead > tr > th {
+    background: rgb(248 250 252 / 0.95);
+    font-family:
+      'Plus Jakarta Sans',
+      Inter,
+      system-ui,
+      sans-serif;
+    font-size: 0.75rem;
+    font-weight: 600;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    color: rgb(100 116 139);
+    border-bottom: 1px solid rgb(226 232 240 / 0.9);
+  }
+  .admin-datatable .p-datatable-tbody > tr {
+    transition: background-color 0.15s ease;
+  }
+  .admin-datatable .p-datatable-tbody > tr:hover {
+    background: rgb(239 246 255 / 0.55);
+  }
+}
+
+/* Thanh cuộn — đặt tại đây vì src/style.css không được import trong main.js */
+:root {
+  --scrollbar-size: 3px;
+  --scrollbar-track: #cc1c25;
+  --scrollbar-thumb: rgba(209, 25, 80, 0.4);
+  --scrollbar-thumb-hover: rgba(226, 52, 90, 0.65);
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --scrollbar-track: #1f2028;
+    --scrollbar-thumb: rgba(156, 163, 175, 0.35);
+    --scrollbar-thumb-hover: rgba(192, 132, 252, 0.55);
+  }
+}
+
+html {
+  scrollbar-width: thin;
+  scrollbar-color: var(--scrollbar-thumb) var(--scrollbar-track);
+}
+
+*::-webkit-scrollbar {
+  width: var(--scrollbar-size);
+  height: var(--scrollbar-size);
+}
+
+*::-webkit-scrollbar-track {
+  background: var(--scrollbar-track);
+}
+
+*::-webkit-scrollbar-thumb {
+  background-color: var(--scrollbar-thumb);
+  border-radius: 999px;
+  /* Kích thước thanh rất nhỏ (3px): không dùng border để tránh làm mất thumb */
+}
+
+*::-webkit-scrollbar-thumb:hover {
+  background-color: var(--scrollbar-thumb-hover);
+}
+
+*::-webkit-scrollbar-corner {
+  background: var(--scrollbar-track);
+}
+
+/* Dùng cho vùng cuộn trong dialog/panel — ghi đè biến CSS của global scrollbar */
+.scrollbar-dialog {
+  --scrollbar-size: 5px;
+  --scrollbar-track: transparent;
+  --scrollbar-thumb: #e2e8f0;
+  --scrollbar-thumb-hover: #94a3b8;
+  scrollbar-width: thin;
+  scrollbar-color: #e2e8f0 transparent;
+}
+
+/* PrimeVue dropdown/multiselect scroll area */
+.scrollbar-select-panel .p-dropdown-items-wrapper,
+.scrollbar-select-panel .p-multiselect-items-wrapper {
+  --scrollbar-size: 6px;
+  --scrollbar-track: transparent;
+  --scrollbar-thumb: #cbd5e1;
+  --scrollbar-thumb-hover: #94a3b8;
+  scrollbar-width: thin;
+  scrollbar-color: #cbd5e1 transparent;
+}
