@@ -97,6 +97,7 @@ Route::prefix('v1')->group(function () {
         Route::get('chatbot/intents', [ChatbotIntentController::class, 'index']);
         Route::post('chatbot/intents', [ChatbotIntentController::class, 'store']);
         Route::put('chatbot/intents/{id}', [ChatbotIntentController::class, 'update'])->whereNumber('id');
+        Route::patch('chatbot/intents/{id}/toggle', [ChatbotIntentController::class, 'toggle'])->whereNumber('id');
         Route::delete('chatbot/intents/{id}', [ChatbotIntentController::class, 'destroy'])->whereNumber('id');
 
         Route::get('chatbot/logs', [ChatbotIntentController::class, 'logs']);

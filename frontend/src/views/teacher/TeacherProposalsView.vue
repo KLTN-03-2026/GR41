@@ -2,13 +2,15 @@
 import { ref, computed } from 'vue'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/vue-query'
 import Button from 'primevue/button'
+import Dialog from 'primevue/dialog'
 import { proposalService } from '@/services/proposalService'
-import { unwrapList } from '@/utils/apiHelpers'
+import { unwrapList, unwrapMeta } from '@/utils/apiHelpers'
 import { useToast } from '@/composables/useToast'
 import ConfirmDialog from '@/components/common/ConfirmDialog.vue'
 import TeacherProposalFormDialog from '@/components/teacher/TeacherProposalFormDialog.vue'
 import LoadingSpinner from '@/components/common/LoadingSpinner.vue'
 import EmptyState from '@/components/common/EmptyState.vue'
+import Pagination from '@/components/common/Pagination.vue'
 import { formatDateTime } from '@/utils/formatters'
 
 const toast = useToast()
@@ -16,26 +18,40 @@ const qc = useQueryClient()
 
 const formVisible = ref(false)
 const deleteTarget = ref(null)
+const rejectionTarget = ref(null)
 const deleteLoading = ref(false)
 const filterStatus = ref('all')
+const page = ref(1)
+const perPage = 10
 
-const { data, isLoading } = useQuery({
+const queryParams = computed(() => ({
+  page: page.value,
+  per_page: perPage,
+  status: filterStatus.value === 'all' ? undefined : filterStatus.value,
+}))
+
+const { data, isLoading, isFetching } = useQuery({
+  queryKey: ['teacher', 'proposals', queryParams],
+  queryFn: () => proposalService.list(queryParams.value),
+})
+
+const { data: statsData } = useQuery({
   queryKey: ['teacher', 'proposals'],
-  queryFn: () => proposalService.list({ per_page: 100 }),
+  queryFn: () => proposalService.list({ per_page: 500 }),
 })
 
 const allItems = computed(() => unwrapList(data.value?.data ?? data.value))
+const statsItems = computed(() => unwrapList(statsData.value?.data ?? statsData.value))
+const meta = computed(() => unwrapMeta(data.value?.data ?? data.value))
+const totalPages = computed(() => Number(meta.value.last_page || meta.value.total_pages || 1))
 
-const items = computed(() => {
-  if (filterStatus.value === 'all') return allItems.value
-  return allItems.value.filter((d) => d.status === filterStatus.value)
-})
+const items = computed(() => allItems.value)
 
 const counts = computed(() => ({
-  all: allItems.value.length,
-  pending: allItems.value.filter((d) => d.status === 'pending').length,
-  published: allItems.value.filter((d) => d.status === 'published').length,
-  rejected: allItems.value.filter((d) => d.status === 'rejected').length,
+  all: statsItems.value.length,
+  pending: statsItems.value.filter((d) => d.status === 'pending').length,
+  published: statsItems.value.filter((d) => d.status === 'published').length,
+  rejected: statsItems.value.filter((d) => d.status === 'rejected').length,
 }))
 
 const delMutation = useMutation({
@@ -61,6 +77,21 @@ const TABS = [
   { key: 'published', label: 'Đã duyệt' },
   { key: 'rejected', label: 'Bị từ chối' },
 ]
+
+const deleteMessage = computed(
+  () => `Bạn có chắc muốn xóa đề xuất "${deleteTarget.value?.title || ''}"? Hành động không thể hoàn tác.`,
+)
+const rejectionVisible = computed({
+  get: () => rejectionTarget.value !== null,
+  set: (value) => {
+    if (!value) rejectionTarget.value = null
+  },
+})
+
+function setFilter(status) {
+  filterStatus.value = status
+  page.value = 1
+}
 </script>
 
 <template>
@@ -83,7 +114,7 @@ const TABS = [
         :class="filterStatus === tab.key
           ? 'border-brand-300 bg-brand-50 shadow-sm'
           : 'border-slate-200/80 bg-white hover:border-slate-300'"
-        @click="filterStatus = tab.key"
+        @click="setFilter(tab.key)"
       >
         <p class="text-2xl font-bold text-slate-900">{{ counts[tab.key] }}</p>
         <p class="mt-0.5 text-xs text-slate-500">{{ tab.label }}</p>
@@ -132,13 +163,16 @@ const TABS = [
             <p class="mt-1 text-xs text-slate-400">Đề xuất {{ formatDateTime(doc.created_at) }}</p>
 
             <!-- Rejection reason -->
-            <div
+            <Button
               v-if="doc.status === 'rejected' && doc.rejection_reason"
-              class="mt-3 rounded-lg border border-rose-200/80 bg-rose-50/70 px-3 py-2"
-            >
-              <p class="text-xs font-medium text-rose-700">Lý do từ chối:</p>
-              <p class="mt-0.5 text-xs text-rose-600 whitespace-pre-wrap">{{ doc.rejection_reason }}</p>
-            </div>
+              label="Xem lý do"
+              icon="pi pi-info-circle"
+              severity="danger"
+              text
+              size="small"
+              class="mt-2 !px-0"
+              @click="rejectionTarget = doc"
+            />
           </div>
 
           <!-- Actions -->
@@ -156,16 +190,44 @@ const TABS = [
           </div>
         </div>
       </div>
+      <Pagination
+        v-if="totalPages > 1"
+        :page="page"
+        :total-pages="totalPages"
+        :loading="isFetching"
+        @update:page="page = $event"
+      />
     </div>
 
     <!-- Form dialog -->
     <TeacherProposalFormDialog v-model:visible="formVisible" />
 
+    <Dialog
+      v-model:visible="rejectionVisible"
+      modal
+      header="Lý do từ chối"
+      class="w-[min(520px,95vw)]"
+      @hide="rejectionTarget = null"
+    >
+      <div v-if="rejectionTarget" class="space-y-3">
+        <p class="font-semibold text-slate-900">{{ rejectionTarget.title }}</p>
+        <div class="rounded-xl border border-rose-200 bg-rose-50 p-4 text-sm text-rose-700 whitespace-pre-wrap">
+          {{ rejectionTarget.rejection_reason }}
+        </div>
+        <p v-if="rejectionTarget.reviewer?.name" class="text-xs text-slate-500">
+          Người duyệt: {{ rejectionTarget.reviewer.name }}
+        </p>
+        <p v-if="rejectionTarget.reviewed_at" class="text-xs text-slate-500">
+          Ngày duyệt: {{ formatDateTime(rejectionTarget.reviewed_at) }}
+        </p>
+      </div>
+    </Dialog>
+
     <!-- Delete confirm -->
     <ConfirmDialog
       :visible="deleteTarget !== null"
       title="Xóa đề xuất"
-      :message="`Bạn có chắc muốn xóa đề xuất &quot;${deleteTarget?.title}&quot;? Hành động không thể hoàn tác.`"
+      :message="deleteMessage"
       :loading="deleteLoading"
       @update:visible="(v) => { if (!v) deleteTarget = null }"
       @confirm="() => { deleteLoading = true; delMutation.mutate(deleteTarget.id) }"

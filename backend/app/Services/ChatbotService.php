@@ -11,7 +11,7 @@ use Illuminate\Support\Str;
 class ChatbotService
 {
     /**
-     * @return array{answer: string, intent: string}
+     * @return array{answer: string, intent: string, matched_intent: string}
      */
     public function ask(string $question, ?int $userId = null): array
     {
@@ -47,7 +47,7 @@ class ChatbotService
             'created_at' => now(),
         ]);
 
-        return ['answer' => $answer, 'intent' => $best->intent_key];
+        return ['answer' => $answer, 'intent' => $best->intent_key, 'matched_intent' => $best->intent_key];
     }
 
     private function renderTemplate(ChatbotIntent $intent, string $q): string
@@ -66,11 +66,15 @@ class ChatbotService
 
         if ($intent->intent_key === 'find_document') {
             $topic = $this->guessTopicFromQuestion($q);
-            $docs = Document::query()->where(function ($b) use ($topic): void {
-                $b->where('title', 'like', '%'.$topic.'%')
-                    ->orWhere('description', 'like', '%'.$topic.'%')
-                    ->orWhere('author', 'like', '%'.$topic.'%');
-            })->limit(5)->get();
+            $docs = Document::query()
+                ->where('status', 'published')
+                ->where(function ($b) use ($topic): void {
+                    $b->where('title', 'like', '%'.$topic.'%')
+                        ->orWhere('description', 'like', '%'.$topic.'%')
+                        ->orWhere('author', 'like', '%'.$topic.'%');
+                })
+                ->limit(5)
+                ->get();
 
             $list = $docs->map(fn (Document $d) => '- '.$d->title)->implode("\n");
             $tpl = str_replace(
@@ -89,7 +93,11 @@ class ChatbotService
 
     private function placeholderPopularDocuments(): string
     {
-        $docs = Document::query()->orderByDesc('view_count')->limit(5)->get();
+        $docs = Document::query()
+            ->where('status', 'published')
+            ->orderByDesc('view_count')
+            ->limit(5)
+            ->get();
 
         return $docs->map(fn (Document $d, int $i) => ($i + 1).'. '.$d->title.' ('.$d->view_count.' lượt xem)')
             ->implode("\n");
@@ -97,7 +105,12 @@ class ChatbotService
 
     private function placeholderCategories(): string
     {
-        $cats = Category::query()->whereNull('parent_id')->with('children')->orderBy('sort_order')->get();
+        $cats = Category::query()
+            ->whereNull('parent_id')
+            ->with('children')
+            ->orderBy('sort_order')
+            ->limit(8)
+            ->get();
 
         return $cats->map(function (Category $c) {
             $children = $c->children->pluck('name')->implode(', ');
@@ -108,7 +121,11 @@ class ChatbotService
 
     private function placeholderNewDocuments(): string
     {
-        $docs = Document::query()->orderByDesc('created_at')->limit(5)->get();
+        $docs = Document::query()
+            ->where('status', 'published')
+            ->orderByDesc('created_at')
+            ->limit(5)
+            ->get();
 
         return $docs->map(fn (Document $d, int $i) => ($i + 1).'. '.$d->title)->implode("\n");
     }

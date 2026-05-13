@@ -9,7 +9,7 @@ const props = defineProps({
   modelValue: { type: Object, required: true },
 })
 
-const emit = defineEmits(['update:modelValue'])
+const emit = defineEmits(['update:modelValue', 'reset'])
 
 function patch(partial) {
   emit('update:modelValue', { ...props.modelValue, ...partial })
@@ -131,6 +131,15 @@ function patch(partial) {
           @update:model-value="(v) => patch({ tag_ids: Array.isArray(v) ? v : [] })"
         />
       </div>
+
+      <button
+        type="button"
+        class="inline-flex w-full items-center justify-center gap-2 rounded-xl border border-brand-200 bg-brand-50 px-4 py-2.5 text-sm font-semibold text-brand-700 transition hover:border-brand-300 hover:bg-brand-100 focus:outline-none focus:ring-2 focus:ring-brand-500/25"
+        @click="emit('reset')"
+      >
+        <Icon icon="mdi:filter-remove-outline" class="h-4 w-4" />
+        Đặt lại bộ lọc
+      </button>
     </div>
   </aside>
 </template>

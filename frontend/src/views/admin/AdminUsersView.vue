@@ -17,9 +17,11 @@ import AdminUserFormDialog from '@/components/admin/AdminUserFormDialog.vue'
 import { useToast } from '@/composables/useToast'
 import { unwrapList } from '@/utils/apiHelpers'
 import { ROLES } from '@/constants'
+import { useAuthStore } from '@/stores/auth'
 
 const toast = useToast()
 const qc = useQueryClient()
+const auth = useAuthStore()
 
 const rawSearch = ref('')
 const filters = ref({ q: '', role: null, status: null })
@@ -189,6 +191,7 @@ function confirmDelete() {
               rounded
               severity="warning"
               title="Khóa tài khoản"
+              :disabled="data.id === auth.user?.id"
               :loading="statusMutation.isPending && statusTargetId === data.id"
               @click="statusMutation.mutate({ id: data.id, status: 'banned' })"
             />
@@ -208,6 +211,7 @@ function confirmDelete() {
               text
               rounded
               title="Xóa"
+              :disabled="data.id === auth.user?.id"
               @click="deleteTarget = data.id"
             />
           </template>

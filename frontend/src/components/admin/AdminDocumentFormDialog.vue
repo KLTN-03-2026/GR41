@@ -147,7 +147,7 @@ function submit() {
   if (!form.value.file_url) return toast.error('Cần upload file PDF trước khi lưu')
   const { tags, ...rest } = form.value
   saveLoading.value = true
-  saveMutation.mutate({ ...rest, tag_ids: tags })
+  saveMutation.mutate({ ...rest, tags })
 }
 </script>
 
@@ -167,8 +167,14 @@ function submit() {
       <div class="grid gap-6 lg:grid-cols-3">
         <!-- Left column: media uploads -->
         <div class="space-y-4">
-          <ImageUploader v-model="form.cover_image" label="Ảnh bìa" accept="image/*" />
-          <ImageUploader v-model="form.file_url" label="File PDF" accept="application/pdf" aspect="cover" />
+          <ImageUploader v-model="form.cover_image" label="Ảnh bìa" accept="image/*" :max-size-mb="5" />
+          <ImageUploader
+            v-model="form.file_url"
+            label="File PDF"
+            accept="application/pdf"
+            aspect="cover"
+            :max-size-mb="50"
+          />
         </div>
 
         <!-- Right columns: form fields -->

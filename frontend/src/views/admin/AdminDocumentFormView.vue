@@ -117,7 +117,7 @@ const saveMutation = useMutation({
 function submit() {
   if (!form.value.file_url) return toast.error('Cần upload file PDF (Cloudinary)')
   const { tags, ...rest } = form.value
-  saveMutation.mutate({ ...rest, tag_ids: tags })
+  saveMutation.mutate({ ...rest, tags })
 }
 </script>
 
@@ -223,8 +223,14 @@ function submit() {
         />
       </div>
 
-      <ImageUploader v-model="form.cover_image" label="Ảnh bìa" accept="image/*" />
-      <ImageUploader v-model="form.file_url" label="File PDF" accept="application/pdf" aspect="cover" />
+      <ImageUploader v-model="form.cover_image" label="Ảnh bìa" accept="image/*" :max-size-mb="5" />
+      <ImageUploader
+        v-model="form.file_url"
+        label="File PDF"
+        accept="application/pdf"
+        aspect="cover"
+        :max-size-mb="50"
+      />
 
       <Button label="Lưu" icon="pi pi-check" :loading="saveMutation.isPending" @click="submit" />
       </div>

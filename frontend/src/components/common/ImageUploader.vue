@@ -8,18 +8,44 @@ const props = defineProps({
   accept: { type: String, default: 'image/*' },
   label: { type: String, default: 'Tải ảnh lên' },
   aspect: { type: String, default: 'square' },
+  maxSizeMb: { type: Number, default: 5 },
 })
 
 const emit = defineEmits(['update:modelValue', 'uploaded', 'error'])
 
 const { mutateAsync: upload, isPending } = useUploadImage()
 const fileInput = ref(null)
+const error = ref('')
 
 const isPdf = () => props.accept.includes('pdf')
+const acceptsFile = (file) => {
+  if (props.accept === 'image/*') return file.type.startsWith('image/')
+  if (props.accept.includes('pdf')) return file.type === 'application/pdf'
+  return props.accept
+    .split(',')
+    .map((item) => item.trim())
+    .filter(Boolean)
+    .some((item) => file.type === item || file.name.toLowerCase().endsWith(item.toLowerCase()))
+}
 
 const handleSelect = async (e) => {
   const file = e.target.files?.[0]
   if (!file) return
+  error.value = ''
+  if (!acceptsFile(file)) {
+    error.value = isPdf() ? 'Chỉ chấp nhận file PDF.' : 'Chỉ chấp nhận file ảnh.'
+    emit('error', new Error(error.value))
+    if (fileInput.value) fileInput.value.value = ''
+    return
+  }
+  if (file.size > props.maxSizeMb * 1024 * 1024) {
+    error.value = isPdf()
+      ? `File không quá ${props.maxSizeMb}MB.`
+      : `Ảnh không quá ${props.maxSizeMb}MB.`
+    emit('error', new Error(error.value))
+    if (fileInput.value) fileInput.value.value = ''
+    return
+  }
   try {
     const result = await upload(file)
     emit('update:modelValue', result.url)
@@ -79,5 +105,6 @@ const removeImage = () => emit('update:modelValue', '')
         {{ isPending ? 'Đang tải...' : modelValue ? 'Đổi file' : 'Chọn file' }}
       </label>
     </div>
+    <p v-if="error" class="text-xs font-medium text-rose-600">{{ error }}</p>
   </div>
 </template>

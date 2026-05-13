@@ -107,10 +107,23 @@ class ProfileController extends Controller
                 'created_at' => $s->searched_at?->toIso8601String(),
             ]);
 
-        $view_history = DocumentView::query()->where('user_id', $userId)->with('document:id,title,slug')->orderByDesc('viewed_at')->limit(50)->get()
+        $view_history = DocumentView::query()
+            ->where('user_id', $userId)
+            ->whereHas('document', fn ($q) => $q->where('status', 'published'))
+            ->with('document:id,title,slug,cover_image')
+            ->orderByDesc('viewed_at')
+            ->limit(50)
+            ->get()
             ->map(fn ($v) => [
-                'document' => $v->document ? ['id' => $v->document->id, 'title' => $v->document->title, 'slug' => $v->document->slug] : null,
+                'document' => $v->document ? [
+                    'id' => $v->document->id,
+                    'title' => $v->document->title,
+                    'slug' => $v->document->slug,
+                    'cover_image' => $v->document->cover_image,
+                ] : null,
                 'title' => $v->document?->title,
+                'slug' => $v->document?->slug,
+                'cover_image' => $v->document?->cover_image,
                 'viewed_at' => $v->viewed_at?->toIso8601String(),
                 'created_at' => $v->viewed_at?->toIso8601String(),
             ]);

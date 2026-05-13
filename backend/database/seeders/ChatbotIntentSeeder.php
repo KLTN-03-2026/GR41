@@ -14,20 +14,20 @@ class ChatbotIntentSeeder extends Seeder
                 'intent_key' => 'greeting',
                 'name' => 'Chào hỏi',
                 'keywords' => ['xin chào', 'hello', 'hi', 'chào bạn'],
-                'response_template' => 'Chào bạn! Tôi là trợ lý ảo Tri Thức Số. Bạn cần tìm tài liệu, xem danh mục hay được hướng dẫn sử dụng thư viện số?',
+                'response_template' => 'Xin chào! Tôi là trợ lý ảo của Tri Thức Số. Tôi có thể giúp gì cho bạn?',
                 'data_source' => null,
             ],
             [
                 'intent_key' => 'find_document',
                 'name' => 'Tìm tài liệu',
-                'keywords' => ['tìm sách về', 'tài liệu về', 'có sách'],
+                'keywords' => ['tìm tài liệu', 'tìm sách về', 'tài liệu về', 'có sách', 'cách tìm kiếm'],
                 'response_template' => 'Hiện có {{count}} tài liệu về {{topic}}:\n{{list}}',
                 'data_source' => null,
             ],
             [
                 'intent_key' => 'borrow_guide',
                 'name' => 'Hướng dẫn mượn',
-                'keywords' => ['làm sao mượn', 'cách mượn', 'mượn sách'],
+                'keywords' => ['làm sao mượn', 'làm sao để mượn', 'cách mượn', 'mượn sách', 'hướng dẫn mượn'],
                 'response_template' => "Quy trình thư viện số:\n1) Đăng nhập\n2) Chọn tài liệu\n3) Nhấn tải/xem\n4) Tuân thủ quy định bản quyền.",
                 'data_source' => null,
             ],
@@ -35,7 +35,7 @@ class ChatbotIntentSeeder extends Seeder
                 'intent_key' => 'opening_hours',
                 'name' => 'Giờ mở cửa',
                 'keywords' => ['giờ mở cửa', 'mấy giờ'],
-                'response_template' => 'Thư viện số hoạt động 24/7 trực tuyến.',
+                'response_template' => 'Giờ mở cửa thư viện: Thứ 2-6: 7h-21h, Thứ 7: 8h-17h, Chủ nhật nghỉ.',
                 'data_source' => null,
             ],
             [
@@ -48,7 +48,7 @@ class ChatbotIntentSeeder extends Seeder
             [
                 'intent_key' => 'popular',
                 'name' => 'Tài liệu phổ biến',
-                'keywords' => ['sách hot', 'phổ biến', 'nhiều người xem'],
+                'keywords' => ['tài liệu phổ biến', 'sách hot', 'phổ biến', 'nhiều người xem'],
                 'response_template' => "Top tài liệu xem nhiều:\n{{popular_documents}}",
                 'data_source' => 'documents.popular',
             ],
@@ -69,8 +69,8 @@ class ChatbotIntentSeeder extends Seeder
             [
                 'intent_key' => 'contact',
                 'name' => 'Liên hệ',
-                'keywords' => ['liên hệ', 'thủ thư', 'hotline'],
-                'response_template' => 'Liên hệ phòng thư viện qua email support@tts.local hoặc fanpage Tri Thức Số.',
+                'keywords' => ['liên hệ', 'thủ thư', 'hotline', 'liên hệ thư viện'],
+                'response_template' => 'Thông tin liên hệ thư viện: SĐT 0123 456 789, email support@tts.local, địa chỉ: Phòng Thư viện - Tri Thức Số.',
                 'data_source' => null,
             ],
             [
@@ -83,7 +83,7 @@ class ChatbotIntentSeeder extends Seeder
             [
                 'intent_key' => 'new_documents',
                 'name' => 'Tài liệu mới',
-                'keywords' => ['mới nhất', 'cập nhật', 'tài liệu mới'],
+                'keywords' => ['mới nhất', 'cập nhật', 'tài liệu mới', 'mới'],
                 'response_template' => "Tài liệu mới cập nhật:\n{{new_documents}}",
                 'data_source' => null,
             ],

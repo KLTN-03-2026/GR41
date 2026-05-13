@@ -11,6 +11,16 @@ export function renderChatMessage(text) {
   if (!text) return ''
   let s = escapeHtml(text)
   s = s.replace(/\r\n/g, '\n')
+  s = s.replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>')
+  s = s.replace(/(^|\n)([-*] .+(?:\n[-*] .+)*)/g, (match, prefix, block) => {
+    const items = block
+      .split('\n')
+      .map((line) => line.replace(/^[-*]\s+/, '').trim())
+      .filter(Boolean)
+      .map((line) => `<li>${line}</li>`)
+      .join('')
+    return `${prefix}<ul>${items}</ul>`
+  })
   s = s.replace(/\n/g, '<br>')
   s = s.replace(/\[([^\]]+)\]\((https?:[^)]+)\)/g, '<a href="$2" target="_blank" rel="noopener noreferrer" class="text-blue-600 underline break-all">$1</a>')
   return s

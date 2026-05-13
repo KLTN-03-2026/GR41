@@ -106,7 +106,11 @@ const saveMutation = useMutation({
 
 function submit() {
   const payload = { ...form.value }
-  if (isEdit.value && !payload.password) delete payload.password
+  if (payload.password) payload.password_confirmation = payload.password
+  if (isEdit.value && !payload.password) {
+    delete payload.password
+    delete payload.password_confirmation
+  }
   saveLoading.value = true
   saveMutation.mutate(payload)
 }

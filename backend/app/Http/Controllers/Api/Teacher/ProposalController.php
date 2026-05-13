@@ -18,7 +18,7 @@ class ProposalController extends Controller
         $user = $request->user();
 
         $q = Document::query()
-            ->with(['category', 'tags'])
+            ->with(['category', 'tags', 'reviewer'])
             ->where('proposed_by', $user->id)
             ->orderByDesc('created_at');
 

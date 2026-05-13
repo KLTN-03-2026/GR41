@@ -5,7 +5,7 @@ export const notificationService = {
   async list(params) {
     const r = await http.get('/notifications', { params })
     const payload = r.data
-    const meta = r._meta?.meta || r._meta || {}
+    const meta = payload?.meta || r._meta?.meta || r._meta || {}
     const items = unwrapList(payload)
     const unread =
       meta.unread_count ??

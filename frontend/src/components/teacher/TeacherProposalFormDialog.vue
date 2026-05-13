@@ -40,6 +40,9 @@ const emptyForm = () => ({
 
 const form = ref(emptyForm())
 const saveLoading = ref(false)
+const submitted = ref(false)
+const currentYear = new Date().getFullYear()
+const isbnPattern = /^(?:97[89][-\s]?)?\d{1,5}[-\s]?\d{1,7}[-\s]?\d{1,7}[-\s]?[\dX]$/i
 
 const { data: cats } = useQuery({
   queryKey: ['categories', 'list'],
@@ -62,14 +65,24 @@ const saveMutation = useMutation({
     emit('update:visible', false)
     emit('saved')
     form.value = emptyForm()
+    submitted.value = false
   },
   onError: (e) => toast.error(e?.message || 'Lỗi khi gửi đề xuất'),
   onSettled: () => { saveLoading.value = false },
 })
 
 function submit() {
-  if (!form.value.file_url) return toast.error('Cần upload file PDF trước khi gửi')
-  if (!form.value.title.trim()) return toast.error('Tiêu đề không được để trống')
+  submitted.value = true
+  if (!form.value.title.trim()) return toast.error('Vui lòng nhập tiêu đề')
+  if (!form.value.description.trim()) return toast.error('Vui lòng nhập mô tả')
+  if (!form.value.category_id) return toast.error('Vui lòng chọn danh mục')
+  if (!form.value.file_url) return toast.error('Vui lòng upload file PDF')
+  if (form.value.published_year && (form.value.published_year < 1900 || form.value.published_year > currentYear)) {
+    return toast.error('Năm phải từ 1900 đến năm hiện tại')
+  }
+  if (form.value.isbn && !isbnPattern.test(form.value.isbn)) {
+    return toast.error('ISBN không hợp lệ')
+  }
   const { tags, ...rest } = form.value
   saveLoading.value = true
   saveMutation.mutate({ ...rest, tags })
@@ -77,7 +90,12 @@ function submit() {
 
 function handleHide() {
   form.value = emptyForm()
+  submitted.value = false
   emit('update:visible', false)
+}
+
+function showUploadError(error) {
+  toast.error(error?.message || 'Upload không hợp lệ')
 }
 </script>
 
@@ -97,8 +115,24 @@ function handleHide() {
       <div class="grid gap-6 lg:grid-cols-3">
         <!-- Left: uploads -->
         <div class="space-y-4">
-          <ImageUploader v-model="form.cover_image" label="Ảnh bìa" accept="image/*" />
-          <ImageUploader v-model="form.file_url" label="File PDF *" accept="application/pdf" aspect="cover" />
+          <ImageUploader
+            v-model="form.cover_image"
+            label="Ảnh bìa"
+            accept="image/*"
+            :max-size-mb="5"
+            @error="showUploadError"
+          />
+          <ImageUploader
+            v-model="form.file_url"
+            label="File PDF *"
+            accept="application/pdf"
+            aspect="cover"
+            :max-size-mb="50"
+            @error="showUploadError"
+          />
+          <p v-if="submitted && !form.file_url" class="text-xs font-medium text-rose-600">
+            Vui lòng upload file PDF
+          </p>
         </div>
 
         <!-- Right: fields -->
@@ -108,11 +142,19 @@ function handleHide() {
               Tiêu đề <span class="text-red-500">*</span>
             </label>
             <InputText v-model="form.title" class="w-full" fluid placeholder="Nhập tên tài liệu..." />
+            <p v-if="submitted && !form.title.trim()" class="mt-1 text-xs font-medium text-rose-600">
+              Vui lòng nhập tiêu đề
+            </p>
           </div>
 
           <div>
-            <label class="mb-1 block text-sm font-semibold text-slate-700">Mô tả</label>
+            <label class="mb-1 block text-sm font-semibold text-slate-700">
+              Mô tả <span class="text-red-500">*</span>
+            </label>
             <Textarea v-model="form.description" rows="4" class="w-full" fluid placeholder="Tóm tắt nội dung tài liệu..." />
+            <p v-if="submitted && !form.description.trim()" class="mt-1 text-xs font-medium text-rose-600">
+              Vui lòng nhập mô tả
+            </p>
           </div>
 
           <div class="grid gap-4 sm:grid-cols-2">
@@ -130,6 +172,9 @@ function handleHide() {
                 class="w-full"
                 :pt="{ overlay: { class: 'scrollbar-select-panel' } }"
               />
+              <p v-if="submitted && !form.category_id" class="mt-1 text-xs font-medium text-rose-600">
+                Vui lòng chọn danh mục
+              </p>
             </div>
             <div>
               <label class="mb-1 block text-sm font-semibold text-slate-700">Ngôn ngữ</label>
@@ -158,10 +203,22 @@ function handleHide() {
             <div>
               <label class="mb-1 block text-sm font-semibold text-slate-700">Năm xuất bản</label>
               <InputText v-model.number="form.published_year" class="w-full" fluid placeholder="2024" />
+              <p
+                v-if="submitted && form.published_year && (form.published_year < 1900 || form.published_year > currentYear)"
+                class="mt-1 text-xs font-medium text-rose-600"
+              >
+                Năm phải từ 1900 đến năm hiện tại
+              </p>
             </div>
             <div>
               <label class="mb-1 block text-sm font-semibold text-slate-700">ISBN</label>
               <InputText v-model="form.isbn" class="w-full" fluid placeholder="978-..." />
+              <p
+                v-if="submitted && form.isbn && !isbnPattern.test(form.isbn)"
+                class="mt-1 text-xs font-medium text-rose-600"
+              >
+                ISBN không hợp lệ
+              </p>
             </div>
             <div>
               <label class="mb-1 block text-sm font-semibold text-slate-700">Số trang</label>
@@ -193,7 +250,6 @@ function handleHide() {
         label="Gửi đề xuất"
         icon="pi pi-send"
         :loading="saveLoading"
-        :disabled="!form.file_url || !form.title.trim() || !form.category_id"
         @click="submit"
       />
     </template>

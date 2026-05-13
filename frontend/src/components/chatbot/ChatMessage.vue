@@ -12,7 +12,7 @@ defineProps({
   >
     <div
       class="prose prose-sm max-w-none break-words"
-      :class="role === 'user' ? '[&_a]:text-blue-100 [&_a]:underline' : '[&_a]:text-blue-600'"
+      :class="role === 'user' ? '[&_a]:text-blue-100 [&_a]:underline' : '[&_a]:text-blue-600 [&_ul]:my-1 [&_ul]:list-disc [&_ul]:pl-5'"
       v-html="html"
     />
   </div>

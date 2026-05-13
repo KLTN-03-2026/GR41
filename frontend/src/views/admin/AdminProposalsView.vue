@@ -85,6 +85,7 @@ function openReject() {
 
 function confirmReject() {
   if (!rejectReason.value.trim()) return toast.error('Vui lòng nhập lý do từ chối')
+  if (rejectReason.value.trim().length < 10) return toast.error('Lý do tối thiểu 10 ký tự')
   rejectLoading.value = true
   rejectMutation.mutate({ id: selectedDoc.value.id, reason: rejectReason.value.trim() })
 }
@@ -146,6 +147,12 @@ function confirmReject() {
         <Column header="Giảng viên" style="width: 160px">
           <template #body="{ data: doc }">
             <span class="text-sm text-slate-700">{{ doc.proposer?.name || '—' }}</span>
+          </template>
+        </Column>
+
+        <Column header="Danh mục" style="width: 160px">
+          <template #body="{ data: doc }">
+            <span class="text-sm text-slate-700">{{ doc.category?.name || '—' }}</span>
           </template>
         </Column>
 
@@ -244,18 +251,26 @@ function confirmReject() {
           </div>
         </div>
 
-        <!-- PDF link -->
-        <div class="flex items-center gap-2 rounded-xl border border-slate-200 bg-slate-50 px-4 py-3">
-          <i class="pi pi-file-pdf text-rose-500" />
-          <a
-            :href="selectedDoc.file_url"
-            target="_blank"
-            rel="noopener"
-            class="flex-1 truncate text-sm font-medium text-brand-600 hover:underline"
-          >
-            Xem file PDF
-          </a>
-          <i class="pi pi-external-link text-xs text-slate-400" />
+        <!-- PDF preview -->
+        <div class="overflow-hidden rounded-xl border border-slate-200 bg-slate-50">
+          <div class="flex items-center gap-2 border-b border-slate-200 px-4 py-3">
+            <i class="pi pi-file-pdf text-rose-500" />
+            <a
+              :href="selectedDoc.file_url"
+              target="_blank"
+              rel="noopener"
+              class="flex-1 truncate text-sm font-medium text-brand-600 hover:underline"
+            >
+              Xem file PDF
+            </a>
+            <i class="pi pi-external-link text-xs text-slate-400" />
+          </div>
+          <iframe
+            v-if="selectedDoc.file_url"
+            :src="selectedDoc.file_url"
+            title="PDF preview"
+            class="h-80 w-full bg-white"
+          />
         </div>
 
         <!-- Rejection reason (if rejected) -->
@@ -274,7 +289,7 @@ function confirmReject() {
           label="Duyệt tài liệu"
           icon="pi pi-check"
           :loading="approveLoading"
-          @click="() => { approveTarget = selectedDoc; approveLoading = true; approveMutation.mutate(selectedDoc.id) }"
+          @click="approveTarget = selectedDoc"
         />
       </template>
     </Dialog>
@@ -303,10 +318,19 @@ function confirmReject() {
           label="Xác nhận từ chối"
           severity="danger"
           :loading="rejectLoading"
-          :disabled="!rejectReason.trim()"
+          :disabled="rejectReason.trim().length < 10"
           @click="confirmReject"
         />
       </template>
     </Dialog>
+
+    <ConfirmDialog
+      :visible="approveTarget !== null"
+      title="Duyệt đề xuất"
+      :message="`Duyệt đề xuất &quot;${approveTarget?.title || ''}&quot;? Tài liệu sẽ được xuất hiện công khai.`"
+      :loading="approveLoading"
+      @update:visible="(v) => { if (!v) approveTarget = null }"
+      @confirm="() => { approveLoading = true; approveMutation.mutate(approveTarget.id) }"
+    />
   </div>
 </template>

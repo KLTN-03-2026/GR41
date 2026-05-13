@@ -20,4 +20,15 @@ class ChatbotAskRequest extends FormRequest
             'question' => 'required|string|min:1|max:500',
         ];
     }
+
+    /**
+     * @return array<string, string>
+     */
+    public function messages(): array
+    {
+        return [
+            'question.max' => 'Câu hỏi không quá 500 ký tự.',
+            'question.required' => 'Vui lòng nhập câu hỏi.',
+        ];
+    }
 }

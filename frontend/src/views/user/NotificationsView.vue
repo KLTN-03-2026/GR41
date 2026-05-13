@@ -1,5 +1,6 @@
 <script setup>
-import { ref, computed } from 'vue'
+import { ref, computed, watch } from 'vue'
+import { useRoute, useRouter } from 'vue-router'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/vue-query'
 import Dialog from 'primevue/dialog'
 import Button from 'primevue/button'
@@ -13,7 +14,9 @@ import { formatDateTime } from '@/utils/formatters'
 
 const toast = useToast()
 const qc = useQueryClient()
-const page = ref(1)
+const route = useRoute()
+const router = useRouter()
+const page = ref(Math.max(1, Number(route.query.page) || 1))
 const filter = ref('all')
 const detailVisible = ref(false)
 const selectedItem = ref(null)
@@ -51,10 +54,44 @@ const markReadMutation = useMutation({
   onSuccess: () => { qc.invalidateQueries({ queryKey: ['notifications'] }) },
 })
 
+watch(
+  () => route.query.page,
+  (value) => {
+    page.value = Math.max(1, Number(value) || 1)
+  },
+)
+
+function setPage(nextPage) {
+  const normalized = Math.min(totalPages.value, Math.max(1, nextPage))
+  page.value = normalized
+  router.push({
+    name: 'notifications',
+    query: normalized > 1 ? { page: normalized } : {},
+  })
+}
+
+function notificationTarget(item) {
+  const link = item.data?.url || item.data?.link || item.link
+  if (link) return link
+  const slug = item.data?.document_slug
+  if (slug) return { name: 'document.detail', params: { slug } }
+  return null
+}
+
 function selectItem(item) {
+  if (!item.is_read) markReadMutation.mutate(item.id)
+  const target = notificationTarget(item)
+  if (target) {
+    if (typeof target === 'string') {
+      if (target.startsWith('/')) router.push(target)
+      else window.open(target, '_blank')
+    } else {
+      router.push(target)
+    }
+    return
+  }
   selectedItem.value = item
   detailVisible.value = true
-  if (!item.is_read) markReadMutation.mutate(item.id)
 }
 </script>
 
@@ -120,6 +157,7 @@ function selectItem(item) {
       <EmptyState
         v-if="filteredItems.length === 0"
         :title="filter === 'unread' ? 'Không có thông báo chưa đọc' : 'Không có thông báo nào'"
+        icon="mdi:bell-off-outline"
       />
       <div v-else class="overflow-hidden rounded-2xl border border-slate-200/80 bg-white shadow-sm">
         <NotificationItem
@@ -138,7 +176,7 @@ function selectItem(item) {
           rounded
           size="small"
           :disabled="page <= 1"
-          @click="page = Math.max(1, page - 1)"
+          @click="setPage(page - 1)"
         />
         <span class="text-sm text-slate-500">{{ page }} / {{ totalPages }}</span>
         <Button
@@ -147,7 +185,7 @@ function selectItem(item) {
           rounded
           size="small"
           :disabled="page >= totalPages"
-          @click="page = Math.min(totalPages, page + 1)"
+          @click="setPage(page + 1)"
         />
       </div>
     </template>

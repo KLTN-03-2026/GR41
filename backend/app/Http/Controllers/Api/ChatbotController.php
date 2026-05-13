@@ -28,11 +28,11 @@ class ChatbotController extends Controller
     public function suggestions(): JsonResponse
     {
         $samples = [
-            'Thư viện mở cửa lúc mấy giờ?',
-            'Làm sao để mượn tài liệu?',
-            'Tài liệu phổ biến nhất hiện nay?',
-            'Danh mục sách có những gì?',
-            'Tôi quên mật khẩu thì làm thế nào?',
+            'Tài liệu phổ biến',
+            'Hướng dẫn mượn sách',
+            'Liên hệ thư viện',
+            'Giờ mở cửa',
+            'Cách tìm kiếm',
         ];
 
         return ApiResponse::success(['questions' => $samples]);

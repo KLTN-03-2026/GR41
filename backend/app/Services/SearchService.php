@@ -179,7 +179,7 @@ class SearchService
             ->selectRaw('keyword, COUNT(*) as cnt')
             ->groupBy('keyword')
             ->orderByDesc('cnt')
-            ->limit(10)
+            ->limit(8)
             ->get();
 
         return [

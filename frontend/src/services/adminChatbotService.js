@@ -5,6 +5,7 @@ export const adminChatbotService = {
   intentDetail: (id) => http.get(`/admin/chatbot/intents/${id}`).then((r) => r.data),
   createIntent: (payload) => http.post('/admin/chatbot/intents', payload).then((r) => r.data),
   updateIntent: (id, payload) => http.put(`/admin/chatbot/intents/${id}`, payload).then((r) => r.data),
+  toggleIntent: (id) => http.patch(`/admin/chatbot/intents/${id}/toggle`).then((r) => r.data),
   deleteIntent: (id) => http.delete(`/admin/chatbot/intents/${id}`).then((r) => r.data),
 
   logs: (params) => http.get('/admin/chatbot/logs', { params }).then((r) => r.data),

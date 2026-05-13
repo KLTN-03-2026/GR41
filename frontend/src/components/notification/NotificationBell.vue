@@ -41,14 +41,17 @@ function close() {
 
 const markRead = useMutation({
   mutationFn: (id) => notificationService.markRead(id),
-  onSuccess: () => queryClient.invalidateQueries({ queryKey: ['notifications'] }),
+  onSuccess: () => {
+    queryClient.invalidateQueries({ queryKey: ['notifications'] })
+  },
 })
 
 function openItem(n) {
-  markRead.mutate(n.id)
-  const link = n.data?.link || n.link
+  if (!n.is_read) markRead.mutate(n.id)
+  const link = n.data?.url || n.data?.link || n.link
   if (link) {
-    window.open(link, '_blank')
+    if (link.startsWith('/')) router.push(link)
+    else window.open(link, '_blank')
     close()
     return
   }
@@ -110,7 +113,7 @@ function openItem(n) {
           <template v-else>
             <NotificationItem v-for="n in data?.items || []" :key="n.id" :item="n" @select="openItem" />
             <p v-if="!(data?.items?.length)" class="px-4 py-8 text-center text-sm text-ink-500">
-              Không có thông báo.
+              Không có thông báo nào.
             </p>
           </template>
         </div>

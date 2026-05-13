@@ -18,7 +18,8 @@ class NotificationAdminController extends Controller
         $title = $request->validated('title');
         $content = $request->validated('content');
 
-        $query = User::query();
+        $query = User::query()->where('status', 'active');
+        $sentCount = 0;
 
         if ($target === 'students') {
             $sid = Role::where('slug', 'student')->value('id');
@@ -28,7 +29,7 @@ class NotificationAdminController extends Controller
             $query->where('role_id', $tid);
         }
 
-        $query->chunkById(500, function ($users) use ($title, $content): void {
+        $query->chunkById(500, function ($users) use ($title, $content, &$sentCount): void {
             foreach ($users as $user) {
                 Notification::create([
                     'user_id' => $user->id,
@@ -38,9 +39,10 @@ class NotificationAdminController extends Controller
                     'is_read' => false,
                     'data' => null,
                 ]);
+                $sentCount++;
             }
         });
 
-        return ApiResponse::success(null, 'Đã gửi thông báo');
+        return ApiResponse::success(['count' => $sentCount], "Đã gửi thông báo đến {$sentCount} người dùng");
     }
 }

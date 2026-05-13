@@ -110,6 +110,9 @@ class ProposalAdminController extends Controller
             'content' => $content,
             'type' => 'proposal_' . $decision,
             'is_read' => false,
+            'data' => $decision === 'approved'
+                ? ['url' => '/documents/' . $document->slug, 'document_slug' => $document->slug]
+                : null,
         ]);
     }
 }

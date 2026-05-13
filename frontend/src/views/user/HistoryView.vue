@@ -1,9 +1,10 @@
 <script setup>
 import { computed } from 'vue'
+import { RouterLink } from 'vue-router'
 import { useQuery } from '@tanstack/vue-query'
 import TabView from 'primevue/tabview'
 import TabPanel from 'primevue/tabpanel'
-import { formatDateTime } from '@/utils/formatters'
+import { formatDate } from '@/utils/formatters'
 import { profileService } from '@/services/profileService'
 import LoadingSpinner from '@/components/common/LoadingSpinner.vue'
 import EmptyState from '@/components/common/EmptyState.vue'
@@ -21,6 +22,27 @@ const searchCount = computed(() => searches.value.length)
 const viewCount = computed(() => views.value.length)
 const lastSearchAt = computed(() => searches.value[0]?.searched_at || searches.value[0]?.created_at || null)
 const lastViewAt = computed(() => views.value[0]?.viewed_at || views.value[0]?.created_at || null)
+const hasNoHistory = computed(() => searchCount.value === 0 && viewCount.value === 0)
+
+function formatRelativeTime(input) {
+  if (!input) return '—'
+  const date = new Date(input)
+  if (Number.isNaN(date.getTime())) return '—'
+
+  const diffSeconds = Math.max(0, Math.floor((Date.now() - date.getTime()) / 1000))
+  if (diffSeconds < 60) return 'Vừa xong'
+
+  const diffMinutes = Math.floor(diffSeconds / 60)
+  if (diffMinutes < 60) return `${diffMinutes} phút trước`
+
+  const diffHours = Math.floor(diffMinutes / 60)
+  if (diffHours < 24) return `${diffHours} giờ trước`
+
+  const diffDays = Math.floor(diffHours / 24)
+  if (diffDays <= 7) return `${diffDays} ngày trước`
+
+  return formatDate(date)
+}
 </script>
 
 <template>
@@ -44,14 +66,14 @@ const lastViewAt = computed(() => views.value[0]?.viewed_at || views.value[0]?.c
           <p class="text-xs uppercase tracking-wide text-slate-500">Tìm kiếm</p>
           <p class="mt-1 text-2xl font-bold text-slate-900">{{ searchCount }}</p>
           <p class="mt-1 text-xs text-slate-500">
-            Gần nhất: {{ lastSearchAt ? formatDateTime(lastSearchAt) : 'Chưa có' }}
+            Gần nhất: {{ lastSearchAt ? formatRelativeTime(lastSearchAt) : 'Chưa có' }}
           </p>
         </div>
         <div class="rounded-2xl border border-white/70 bg-white/75 p-4 backdrop-blur-sm transition duration-300 hover:-translate-y-0.5 hover:shadow-md">
           <p class="text-xs uppercase tracking-wide text-slate-500">Đã xem</p>
           <p class="mt-1 text-2xl font-bold text-slate-900">{{ viewCount }}</p>
           <p class="mt-1 text-xs text-slate-500">
-            Gần nhất: {{ lastViewAt ? formatDateTime(lastViewAt) : 'Chưa có' }}
+            Gần nhất: {{ lastViewAt ? formatRelativeTime(lastViewAt) : 'Chưa có' }}
           </p>
         </div>
       </div>
@@ -63,8 +85,22 @@ const lastViewAt = computed(() => views.value[0]?.viewed_at || views.value[0]?.c
       title="Không thể tải lịch sử"
       description="Vui lòng thử tải lại trang sau ít phút."
     />
+    <EmptyState
+      v-else-if="hasNoHistory"
+      class="mt-8"
+      title="Chưa có lịch sử nào"
+      description="Hãy khám phá và tìm kiếm tài liệu để lịch sử hoạt động của bạn xuất hiện tại đây."
+      icon="mdi:history"
+    >
+      <RouterLink
+        to="/search"
+        class="inline-flex items-center justify-center rounded-full bg-brand-600 px-5 py-2 text-sm font-semibold text-white transition hover:bg-brand-700"
+      >
+        Khám phá tài liệu
+      </RouterLink>
+    </EmptyState>
     <TabView v-else class="mt-8">
-      <TabPanel header="Tìm kiếm">
+      <TabPanel header="Lịch sử tìm kiếm">
         <div class="mb-4 rounded-2xl border border-slate-200/80 bg-white/85 p-3 text-sm text-slate-600 shadow-soft">
           <span class="font-semibold text-slate-800">Mẹo:</span> Chạm vào từ khóa bạn hay dùng để tìm lại nhanh các tài liệu liên quan.
         </div>
@@ -76,17 +112,20 @@ const lastViewAt = computed(() => views.value[0]?.viewed_at || views.value[0]?.c
             class="history-item group flex items-center justify-between gap-3 rounded-2xl border border-slate-200/70 bg-white px-4 py-3 text-sm shadow-soft"
             :style="{ animationDelay: `${i * 45}ms` }"
           >
-            <div class="min-w-0">
+            <RouterLink
+              :to="{ name: 'search', query: { q: s.keyword || s.query || s.q || '' } }"
+              class="min-w-0 flex-1"
+            >
               <p class="truncate font-semibold text-slate-800">{{ s.keyword || s.query || s.q || '(trống)' }}</p>
               <p class="mt-1 text-xs text-slate-500">Kết quả phù hợp: {{ s.result_count ?? 0 }}</p>
-            </div>
+            </RouterLink>
             <span class="shrink-0 rounded-lg bg-slate-50 px-2.5 py-1 text-xs text-slate-500 transition group-hover:bg-brand-50 group-hover:text-brand-700">
-              {{ formatDateTime(s.searched_at || s.created_at) }}
+              {{ formatRelativeTime(s.searched_at || s.created_at) }}
             </span>
           </li>
         </ul>
       </TabPanel>
-      <TabPanel header="Đã xem">
+      <TabPanel header="Lịch sử xem">
         <div class="mb-4 rounded-2xl border border-slate-200/80 bg-white/85 p-3 text-sm text-slate-600 shadow-soft">
           <span class="font-semibold text-slate-800">Gợi ý:</span> Danh sách này giúp bạn quay lại tài liệu đang đọc dở chỉ với 1 lần nhấn.
         </div>
@@ -98,9 +137,24 @@ const lastViewAt = computed(() => views.value[0]?.viewed_at || views.value[0]?.c
             class="history-item group flex items-center justify-between gap-3 rounded-2xl border border-slate-200/70 bg-white px-4 py-3 text-sm shadow-soft"
             :style="{ animationDelay: `${i * 45}ms` }"
           >
-            <span class="line-clamp-2 font-medium text-slate-800">{{ v.document?.title || v.title }}</span>
+            <div class="flex min-w-0 flex-1 items-center gap-3">
+              <div class="h-14 w-11 shrink-0 overflow-hidden rounded-lg bg-slate-100 ring-1 ring-slate-200">
+                <img
+                  v-if="v.document?.cover_image || v.cover_image"
+                  :src="v.document?.cover_image || v.cover_image"
+                  :alt="v.document?.title || v.title"
+                  class="h-full w-full object-cover"
+                />
+              </div>
+              <RouterLink
+                :to="{ name: 'document.detail', params: { slug: v.document?.slug || v.slug } }"
+                class="line-clamp-2 min-w-0 flex-1 font-medium text-slate-800"
+              >
+                {{ v.document?.title || v.title }}
+              </RouterLink>
+            </div>
             <span class="shrink-0 rounded-lg bg-slate-50 px-2.5 py-1 text-xs text-slate-500 transition group-hover:bg-indigo-50 group-hover:text-indigo-700">
-              {{ formatDateTime(v.viewed_at || v.created_at) }}
+              {{ formatRelativeTime(v.viewed_at || v.created_at) }}
             </span>
           </li>
         </ul>

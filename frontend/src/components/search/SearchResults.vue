@@ -1,4 +1,5 @@
 <script setup>
+import { computed } from 'vue'
 import DocumentCard from '@/components/document/DocumentCard.vue'
 import HighlightText from '@/components/common/HighlightText.vue'
 import EmptyState from '@/components/common/EmptyState.vue'
@@ -8,10 +9,29 @@ const props = defineProps({
   results: { type: [Array, Object], default: () => [] },
   keyword: { type: String, default: '' },
   didYouMean: { type: String, default: '' },
+  expandedKeywords: { type: Array, default: () => [] },
   loading: { type: Boolean, default: false },
 })
 
 const rows = () => unwrapList(props.results)
+const normalizedKeywordParts = computed(() =>
+  props.keyword
+    .trim()
+    .toLowerCase()
+    .split(/\s+/u)
+    .filter(Boolean),
+)
+const expandedKeywordChips = computed(() =>
+  props.expandedKeywords
+    .map((keyword) => String(keyword).trim())
+    .filter(Boolean)
+    .filter((keyword, index, list) => list.indexOf(keyword) === index),
+)
+const hasSynonymExpansion = computed(() =>
+  expandedKeywordChips.value.some(
+    (keyword) => !normalizedKeywordParts.value.includes(keyword.toLowerCase()),
+  ),
+)
 </script>
 
 <template>
@@ -25,6 +45,29 @@ const rows = () => unwrapList(props.results)
       Bạn có muốn tìm:
       <strong class="font-semibold">{{ didYouMean }}</strong>?
     </p>
+
+    <div
+      v-if="hasSynonymExpansion"
+      class="mb-5 rounded-2xl border border-brand-200/70 bg-brand-50/80 px-4 py-3"
+    >
+      <div class="mb-3 flex flex-wrap items-center gap-2">
+        <span class="text-sm font-semibold text-ink-900">Từ khóa liên quan</span>
+        <span
+          class="inline-flex items-center rounded-full bg-brand-600 px-2.5 py-1 text-[11px] font-semibold uppercase tracking-wide text-white"
+        >
+          Đã mở rộng từ đồng nghĩa
+        </span>
+      </div>
+      <div class="flex flex-wrap gap-2">
+        <span
+          v-for="keyword in expandedKeywordChips"
+          :key="keyword"
+          class="inline-flex items-center rounded-full border border-brand-200 bg-white px-3 py-1.5 text-xs font-semibold text-brand-700 shadow-sm"
+        >
+          {{ keyword }}
+        </span>
+      </div>
+    </div>
 
     <!-- Loading grid -->
     <div v-if="loading" class="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">

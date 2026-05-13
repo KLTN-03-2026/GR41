@@ -37,6 +37,14 @@ class ChatbotIntentController extends Controller
         return ApiResponse::success(new ChatbotIntentResource($intent->fresh()));
     }
 
+    public function toggle(int $id): JsonResponse
+    {
+        $intent = ChatbotIntent::query()->findOrFail($id);
+        $intent->update(['is_active' => ! $intent->is_active]);
+
+        return ApiResponse::success(new ChatbotIntentResource($intent->fresh()));
+    }
+
     public function destroy(int $id): JsonResponse
     {
         ChatbotIntent::query()->findOrFail($id)->delete();
@@ -46,6 +54,15 @@ class ChatbotIntentController extends Controller
 
     public function logs(Request $request): JsonResponse
     {
+        $request->validate([
+            'intent_id' => 'nullable|integer|exists:chatbot_intents,id',
+            'date_from' => 'nullable|date',
+            'date_to' => 'nullable|date|after_or_equal:date_from',
+            'per_page' => 'nullable|integer|min:1|max:100',
+        ], [
+            'date_to.after_or_equal' => 'Ngày bắt đầu phải <= ngày kết thúc.',
+        ]);
+
         $q = ChatbotLog::query()->with(['intent', 'user']);
 
         if ($request->filled('intent_id')) {

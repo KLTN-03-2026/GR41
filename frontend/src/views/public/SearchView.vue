@@ -1,6 +1,6 @@
 <script setup>
 import { ref, watch, computed } from 'vue'
-import { useRoute } from 'vue-router'
+import { useRoute, useRouter } from 'vue-router'
 import { keepPreviousData, useQuery } from '@tanstack/vue-query'
 import { Icon } from '@iconify/vue'
 import SearchBar from '@/components/search/SearchBar.vue'
@@ -15,17 +15,29 @@ import { tagService } from '@/services/tagService'
 import { unwrapList } from '@/utils/apiHelpers'
 
 const route = useRoute()
+const router = useRouter()
 const q = ref(typeof route.query.q === 'string' ? route.query.q : '')
 const page = ref(1)
 const sort = ref('relevance')
 
-const filters = ref({
-  category_id: null,
-  year_from: null,
-  year_to: null,
-  language: '',
-  tag_ids: [],
-})
+function defaultFilters() {
+  return {
+    category_id: null,
+    year_from: null,
+    year_to: null,
+    language: '',
+    tag_ids: [],
+  }
+}
+
+const filters = ref(defaultFilters())
+
+function resetFilters() {
+  filters.value = defaultFilters()
+  q.value = ''
+  page.value = 1
+  router.replace({ name: 'search' })
+}
 
 watch(
   () => route.query.q,
@@ -77,6 +89,10 @@ const results = computed(() =>
 const didYouMean = computed(
   () => searchData.value?.did_you_mean || searchData.value?.didYouMean || '',
 )
+const expandedKeywords = computed(() => {
+  const value = searchData.value?.expanded_keywords || searchData.value?.expandedKeywords || []
+  return Array.isArray(value) ? value : []
+})
 const totalResults = computed(() => {
   const m = searchData.value?.meta || searchData.value?.pagination || {}
   if (m.total != null) return Number(m.total)
@@ -177,7 +193,12 @@ const trendingKeywords = computed(() => {
         <div
           class="animate-fade-up space-y-6 delay-100 motion-reduce:animate-none motion-reduce:opacity-100 motion-reduce:delay-0 lg:sticky lg:top-24 lg:self-start"
         >
-          <DocumentFilter v-model="filters" :categories="categoriesFlat" :tags="tags" />
+          <DocumentFilter
+            v-model="filters"
+            :categories="categoriesFlat"
+            :tags="tags"
+            @reset="resetFilters"
+          />
           <TrendingKeywords :keywords="trendingKeywords" :loading="trendLoad" />
         </div>
 
@@ -220,6 +241,7 @@ const trendingKeywords = computed(() => {
             :results="results"
             :keyword="q"
             :did-you-mean="didYouMean"
+            :expanded-keywords="expandedKeywords"
             :loading="isPending"
           />
 

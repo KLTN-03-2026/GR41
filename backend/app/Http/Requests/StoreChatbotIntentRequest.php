@@ -26,4 +26,19 @@ class StoreChatbotIntentRequest extends FormRequest
             'is_active' => 'boolean',
         ];
     }
+
+    /**
+     * @return array<string, string>
+     */
+    public function messages(): array
+    {
+        return [
+            'intent_key.required' => 'Vui lòng nhập intent_key.',
+            'intent_key.unique' => 'Intent key đã tồn tại.',
+            'name.required' => 'Vui lòng nhập name.',
+            'keywords.required' => 'Vui lòng nhập keywords.',
+            'keywords.array' => 'Keywords phải là danh sách.',
+            'response_template.required' => 'Vui lòng nhập response_template.',
+        ];
+    }
 }

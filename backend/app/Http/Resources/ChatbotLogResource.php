@@ -16,7 +16,9 @@ class ChatbotLogResource extends JsonResource
             'id' => $this->id,
             'question' => $this->question,
             'answer' => $this->answer,
+            'matched_intent_id' => $this->matched_intent_id,
             'matched_intent' => $this->intent?->intent_key ?? $this->intent?->name,
+            'user_id' => $this->user_id,
             'user' => $this->whenLoaded('user', fn () => ['id' => $this->user_id, 'name' => $this->user?->name]),
             'created_at' => $this->created_at?->toIso8601String(),
         ];

@@ -47,6 +47,7 @@ class DocumentResource extends JsonResource
             'reviewed_at' => $this->reviewed_at?->toIso8601String(),
             'rejection_reason' => $this->rejection_reason,
             'proposer' => $this->whenLoaded('proposer', fn () => ['id' => $this->proposer->id, 'name' => $this->proposer->name, 'email' => $this->proposer->email]),
+            'reviewer' => $this->whenLoaded('reviewer', fn () => ['id' => $this->reviewer->id, 'name' => $this->reviewer->name, 'email' => $this->reviewer->email]),
             'created_at' => $this->created_at?->toIso8601String(),
             'updated_at' => $this->updated_at?->toIso8601String(),
         ];

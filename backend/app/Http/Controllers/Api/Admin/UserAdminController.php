@@ -82,6 +82,9 @@ class UserAdminController extends Controller
     public function patchStatus(PatchUserStatusRequest $request, int $id): JsonResponse
     {
         $user = User::query()->findOrFail($id);
+        if ($request->user()?->id === $user->id && $request->validated('status') === 'banned') {
+            return ApiResponse::error('Không thể khóa tài khoản admin hiện tại.', 403);
+        }
         $user->update(['status' => $request->validated('status')]);
         $user->load('role');
 
@@ -90,7 +93,15 @@ class UserAdminController extends Controller
 
     public function destroy(int $id): JsonResponse
     {
-        User::query()->findOrFail($id)->delete();
+        $user = User::query()->with('role')->findOrFail($id);
+        if (request()->user()?->id === $user->id) {
+            return ApiResponse::error('Không thể xóa admin chính.', 403);
+        }
+        if ($user->role?->slug === 'admin' && User::query()->whereHas('role', fn ($q) => $q->where('slug', 'admin'))->count() <= 1) {
+            return ApiResponse::error('Không thể xóa admin chính.', 403);
+        }
+
+        $user->delete();
 
         return ApiResponse::success(null, 'Đã xóa người dùng');
     }

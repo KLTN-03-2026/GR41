@@ -18,6 +18,7 @@ const open = ref(false)
 const loadingBoot = ref(false)
 const typing = ref(false)
 const input = ref('')
+const inputError = ref('')
 const suggestions = ref([])
 const messages = ref([])
 const messagesEl = ref(null)
@@ -59,21 +60,25 @@ async function bootSuggestions() {
   loadingBoot.value = true
   try {
     const raw = await chatbotService.suggestions()
-    suggestions.value = Array.isArray(raw) ? raw : raw?.data || raw?.items || []
+    suggestions.value = Array.isArray(raw) ? raw : raw?.questions || raw?.data || raw?.items || []
     if (!Array.isArray(suggestions.value)) suggestions.value = []
     suggestions.value = suggestions.value.slice(0, 5)
   } catch {
     suggestions.value = [
-      'Tìm tài liệu về lập trình web?',
-      'Cách đánh giá tài liệu?',
-      'Danh mục phổ biến là gì?',
+      'Tài liệu phổ biến',
+      'Hướng dẫn mượn sách',
+      'Liên hệ thư viện',
+      'Giờ mở cửa',
+      'Cách tìm kiếm',
     ]
   } finally {
     if (!suggestions.value?.length) {
       suggestions.value = [
-        'Tìm tài liệu về lập trình web?',
-        'Cách đánh giá tài liệu?',
-        'Danh mục phổ biến là gì?',
+        'Tài liệu phổ biến',
+        'Hướng dẫn mượn sách',
+        'Liên hệ thư viện',
+        'Giờ mở cửa',
+        'Cách tìm kiếm',
       ]
     }
     loadingBoot.value = false
@@ -106,6 +111,11 @@ onUnmounted(() => {
 async function sendText(text) {
   const q = (text ?? input.value).trim()
   if (!q) return
+  if (q.length > 500) {
+    inputError.value = 'Câu hỏi không quá 500 ký tự.'
+    return
+  }
+  inputError.value = ''
   input.value = ''
   messages.value.push({ role: 'user', text: q })
   typing.value = true
@@ -141,19 +151,24 @@ async function sendText(text) {
             <Icon icon="mdi:robot-happy-outline" class="h-6 w-6" />
             <span class="font-semibold">Trợ lý Tri Thức Số</span>
           </div>
-          <button type="button" class="rounded-lg p-1 hover:bg-white/10" aria-label="Đóng" @click="open = false">
-            <Icon icon="mdi:close" class="h-5 w-5" />
+          <button type="button" class="rounded-lg p-1 hover:bg-white/10" aria-label="Thu nhỏ" @click="open = false">
+            <Icon icon="mdi:minus" class="h-5 w-5" />
           </button>
         </div>
         <div class="flex flex-1 flex-col overflow-hidden bg-slate-50">
           <div ref="messagesEl" class="flex-1 space-y-3 overflow-y-auto px-3 py-3 scrollbar-dialog">
-            <div v-if="messages.length === 0 && !loadingBoot" class="space-y-2">
-              <p class="text-xs text-slate-500">Gợi ý nhanh:</p>
+            <div v-if="messages.length === 0 && !loadingBoot" class="flex flex-wrap gap-2">
+              <ChatMessage
+                class="basis-full"
+                role="bot"
+                :html="renderChatMessage('Xin chào! Tôi là trợ lý ảo của Tri Thức Số. Tôi có thể giúp gì cho bạn?')"
+              />
+              <p class="basis-full text-xs text-slate-500">Gợi ý nhanh:</p>
               <button
                 v-for="(s, i) in suggestions"
                 :key="i"
                 type="button"
-                class="block w-full rounded-full border border-slate-200 bg-white px-3 py-2 text-left text-xs text-slate-700 hover:border-primary-blue hover:text-primary-blue"
+                class="inline-flex rounded-full border border-primary-blue/15 bg-primary-blue/10 px-3 py-2 text-left text-xs font-medium text-primary-blue transition hover:border-primary-blue/40 hover:bg-primary-blue/15"
                 @click="sendText(typeof s === 'string' ? s : s.text || s.question)"
               >
                 {{ typeof s === 'string' ? s : s.text || s.question }}
@@ -174,6 +189,7 @@ async function sendText(text) {
                 type="text"
                 class="flex-1 rounded-xl border border-slate-200 px-3 py-2 text-sm outline-none focus:border-primary-blue focus:ring-1 focus:ring-primary-blue"
                 placeholder="Nhập câu hỏi..."
+                @input="inputError = ''"
               />
               <button
                 type="submit"
@@ -183,6 +199,7 @@ async function sendText(text) {
                 Gửi
               </button>
             </div>
+            <p v-if="inputError" class="mt-2 text-xs font-medium text-red-600">{{ inputError }}</p>
           </form>
         </div>
       </div>
@@ -194,7 +211,7 @@ async function sendText(text) {
       aria-label="Mở chat"
       @click="toggle"
     >
-      <Icon icon="mdi:message-text-outline" class="h-7 w-7" />
+      <Icon icon="mdi:chat-outline" class="h-7 w-7" />
     </button>
   </div>
 </template>
